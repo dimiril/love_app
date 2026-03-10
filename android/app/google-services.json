@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "881551094079",
+    "project_id": "lovelyapps-13a63",
+    "storage_bucket": "lovelyapps-13a63.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:881551094079:android:de50a016739bb6bc7aa38a",
+        "android_client_info": {
+          "package_name": "com.lovelyapps.romantic.love.messages.quotes"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDkV-0NEXH4C9XEzvpBHSJzqguUnolev88"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
