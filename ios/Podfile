@@ -1,18 +1,37 @@
-platform :ios, '13.0'
+# 1. هاد السطر ضروري باش الـ Pod يعرف فين كاين Flutter
+        
+        load File.join(File.dirname(File.realpath(__FILE__)), 'Generated.xcconfig') rescue nil
+        load File.join(File.dirname(File.realpath(__FILE__)), '.flutter-plugins-dependencies') rescue nil
 
-target 'Runner' do
-  use_frameworks!
-  use_modular_headers!
+        # هاد السطر هو اللي كان ناقصك باش يعرف الأوامر ديال Flutter
+        def flutter_root
+          generated_xcode_build_settings_path = File.expand_path(File.join('..', '..', 'flutter_export_environment.sh'), __FILE__)
+          unless File.exist?(generated_xcode_build_settings_path)
+            raise "Executable flutter_export_environment.sh not found in #{generated_xcode_build_settings_path}"
+          end
+          File.foreach(generated_xcode_build_settings_path) do |line|
+            return line.split('=')[1].strip.gsub(/[ '"]/, '') if line.start_with?('FLUTTER_ROOT=')
+          end
+        end
 
-  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-end
+        load File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'xcode_backend.rb')
+        load File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
 
-post_install do |installer|
-  installer.pods_project.targets.each do |target|
-    flutter_additional_ios_build_settings(target)
-    target.build_configurations.each do |config|
-      # ضروري باش يتوافق مع الـ Packages اللي عندك
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
-    end
-  end
-end
+        platform :ios, '13.0'
+
+        target 'Runner' do
+          use_frameworks!
+          use_modular_headers!
+
+          # دابا هادي غاتخدم حيت درنا load لـ podhelper.rb الفوق
+          flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+        end
+
+        post_install do |installer|
+          installer.pods_project.targets.each do |target|
+            flutter_additional_ios_build_settings(target)
+            target.build_configurations.each do |config|
+              config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+            end
+          end
+        end
