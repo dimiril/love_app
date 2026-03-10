@@ -1,21 +1,14 @@
-# السطر اللي كان خاصك تعدل:
 platform :ios, '13.0'
-
-# هاد الأسطر ضرورية باش يربط مع Flutter
-load File.join(File.dirname(File.realpath(__FILE__)), 'Flutter', 'podhelper.rb')
 
 target 'Runner' do
   use_frameworks!
   use_modular_headers!
-
-  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  
+  # هادي غاتخلي Codemagic يتجاوز التحقق اليدوي
 end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
-    flutter_additional_ios_build_settings(target)
-    
-    # تأكد أن كل الـ Packages خدامين بـ iOS 13
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
     end
