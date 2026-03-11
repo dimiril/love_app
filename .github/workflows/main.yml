@@ -21,28 +21,28 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Recreate iOS and Fix Headers
+      - name: Clean and Reconstruct iOS Project
         run: |
-          # 1. تنظيف شامل ومسح الـ Pods القديمة
+          # 1. تنظيف عميق للمشروع
           flutter clean
           rm -rf ios/Pods
           rm -rf ios/Podfile.lock
+          rm -rf ios/Flutter/Flutter.podspec
           
-          # 2. إعادة بناء ملفات الـ iOS
+          # 2. إعادة إنشاء ملفات iOS من جديد لضمان المسارات الصحيحة
           rm -rf ios
           flutter create . --platforms=ios --org love.messages.romantic.whispers.heartfelt
           
-          # 3. توحيد الـ Bundle ID مع Firebase
+          # 3. تعديل الـ Bundle ID ليتوافق مع Firebase
           find ios -name "project.pbxproj" -exec sed -i '' 's/love.messages.romantic.whispers.heartfelt.heartfelt/love.messages.romantic.whispers.heartfelt.quotes/g' {} +
 
-      - name: Advanced Podfile Injection
+      - name: Fix Podfile and Build Settings
         run: |
           cd ios
-          # تثبيت الـ Pods الأساسي لتوليد الـ Frameworks
+          # تثبيت الـ Pods لأول مرة لتوليد الـ Frameworks
           pod install
           
-          # هاد السكريبت كيمسح الـ post_install القديم وكيدير واحد جديد
-          # كيجبر كاع الـ Plugins يشوفو الـ Flutter Header
+          # مسح الـ post_install التلقائي وتعويضه بواحد قوي كيهنينا من الـ Signing والـ Modules
           sed -i '' '/post_install do |installer|/,$d' Podfile
           
           cat <<EOF >> Podfile
@@ -53,8 +53,8 @@ jobs:
                 config.build_settings['ENABLE_BITCODE'] = 'NO'
                 config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
                 config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
-                # حل مشكل 'Flutter/Flutter.h' file not found
-                config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+                # هاد السطر كيعالج مشكل No such module Flutter
+                config.build_settings['FRAMEWORK_SEARCH_PATHS'] = '$(inherited) \$(PROJECT_DIR)/Flutter'
                 config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
               end
             end
@@ -66,13 +66,14 @@ jobs:
 
       - name: Build for Simulator
         run: |
-          # استعمال verbose مهم هنا باش يبان لينا فين واقف Xcode بالضبط
-          flutter build ios --simulator --debug --no-codesign
+          # استعمال --verbose باش نشوفو فين كيحصل Xcode بالضبط
+          flutter build ios --simulator --debug --no-codesign --verbose
 
       - name: Create IPA for Appetize
         run: |
           rm -rf Payload app-debug.ipa
           mkdir -p Payload
+          # التأكد من هز الـ .app من المسار الصحيح
           if [ -d "build/ios/iphonesimulator/Runner.app" ]; then
             cp -r build/ios/iphonesimulator/Runner.app Payload
           else
