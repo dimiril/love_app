@@ -27,46 +27,36 @@ jobs:
           flutter create . --platforms=ios
           flutter pub get
 
-      - name: Advanced Podfile Patch
+      - name: Safe Podfile Injection
         run: |
           cd ios
-          # هاد السكريبت بـ Ruby غادي يقاد الـ Podfile بلا ما يدير Error ديال Multiple post_install
-          ruby -e "
-            path = 'Podfile'
-            content = File.read(path)
-            # كنحيدو أي post_install قديم كاين فـ الملف
-            content = content.gsub(/post_install do \|installer\|.*?end/m, '')
-            # كنضيفو الـ post_install ديالنا فـ لخر ديال الملف
-            content += %Q{
-          post_install do |installer|
-            installer.pods_project.targets.each do |target|
-              target.build_configurations.each do |config|
-                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
-                config.build_settings['ENABLE_BITCODE'] = 'NO'
-                config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
-                config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
-                config.build_settings['EXPANDED_CODE_SIGN_STYLE'] = 'Manual'
-                config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
-              end
-            end
-          end
-          }
-            File.open(path, 'w') { |f| f.write(content) }
-          "
-          # دابا غادي نديرو pod install نقي
+          # غادي نخدمو بـ sed باش نزيدو الإعدادات ديالنا لداخل بلا ما نخسرو الـ Syntax
+          # هاد السطر كيدخل وسط الـ post_install اللي ديجا كاين وكيزيد فيه الأوامر ديالنا
+          sed -i '' '/target.build_configurations.each do |config|/a \
+                config.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "13.0" \
+                config.build_settings["ENABLE_BITCODE"] = "NO" \
+                config.build_settings["CODE_SIGNING_ALLOWED"] = "NO" \
+                config.build_settings["CODE_SIGNING_REQUIRED"] = "NO" \
+                config.build_settings["ONLY_ACTIVE_ARCH"] = "YES" ' Podfile
+          
+          # تثبيت المكتبات (Firebase, etc)
           pod install
           cd ..
 
       - name: Build iOS Simulator
         run: |
-          # بناء التطبيق للمحاكي
           flutter build ios --simulator --debug --no-codesign
 
       - name: Create IPA for Appetize
         run: |
           rm -rf Payload app-debug.ipa
           mkdir -p Payload
-          cp -r build/ios/iphonesimulator/Runner.app Payload
+          # تأكد من المسار الصحيح
+          if [ -d "build/ios/iphonesimulator/Runner.app" ]; then
+            cp -r build/ios/iphonesimulator/Runner.app Payload
+          else
+            cp -r build/ios/Debug-iphonesimulator/Runner.app Payload
+          fi
           zip -r app-debug.ipa Payload
 
       - name: Upload IPA artifact
