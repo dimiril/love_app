@@ -3,8 +3,8 @@ workflows:
     name: Debug iOS Build
     max_build_duration: 60
     environment:
-      flutter: "3.23.1"    # Flutter حديث + Dart ≥ 3.9.2
-      xcode: "14.2"        # حديث ومتوافق مع Firebase + Swift
+      flutter: "3.23.1"
+      xcode: "15.4"        # هادي هي النسخة المستقرة دابا فـ 2026
       cocoapods: default
     scripts:
       - name: Install Flutter dependencies & Pods
@@ -12,11 +12,13 @@ workflows:
           flutter clean
           flutter pub get
           cd ios
-          pod deintegrate
+          # مسح أي بقايا قديمة باش ما يوقعش Conflict
+          rm -rf Pods
+          rm -f Podfile.lock
           pod install --repo-update
           cd ..
       - name: Build Debug IPA
         script: |
-          flutter build ipa --debug --no-codesign
+          flutter build ios --debug --no-codesign
     artifacts:
-      - build/ios/ipa/*.ipa
+      - build/ios/iphoneos/*.app
