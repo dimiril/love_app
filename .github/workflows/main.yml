@@ -8,7 +8,6 @@ on:
 jobs:
   build-ios-simulator:
     runs-on: macos-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,25 +24,25 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Clean & Recreate iOS Project
+      - name: Recreate iOS project
         run: |
-          flutter clean
           rm -rf ios
           flutter create .
-          
-      - name: Ensure minimal podhelper.rb exists
+
+      - name: Ensure minimal podhelper.rb
         run: |
           mkdir -p ios/Flutter
-          printf "require 'fileutils'\ndef install_all_flutter_pods(flutter_application_path = nil); end\ndef flutter_root; ENV['FLUTTER_ROOT']; end" > ios/Flutter/podhelper.rb
+          printf "require 'fileutils'\ndef install_all_flutter_pods(path = nil); end\ndef flutter_root; ENV['FLUTTER_ROOT']; end" > ios/Flutter/podhelper.rb
 
-      - name: Build iOS Simulator
-        run: flutter build ios --debug --simulator --no-codesign
+      - name: Build iOS Simulator IPA
+        run: |
+          flutter build ios --simulator --release --no-codesign
 
-      - name: Create IPA for Appetize.io
+      - name: Create IPA for Appetize
         run: |
           rm -f app-debug.ipa
           rm -rf Payload
-          mkdir -p Payload
+          mkdir Payload
           cp -r build/ios/iphonesimulator/Runner.app Payload
           zip -r app-debug.ipa Payload
 
