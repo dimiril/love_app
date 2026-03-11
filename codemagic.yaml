@@ -1,40 +1,53 @@
-workflows:
-  flutter_ios_debug:
-    name: Flutter iOS Simulator Fix
-    max_build_duration: 60
-    environment:
-      flutter: stable
-      xcode: latest
-    scripts:
-      - name: Checkout code
-        script: git checkout $CM_BRANCH
+name: Flutter iOS IPA for Appetize
 
-      - name: Clean and Setup
-        script: |
-          # مسح كاع الملفات القديمة باش ما يبقاش التداخل
-          flutter clean
-          flutter pub get
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-ios-simulator:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter Doctor
+        run: flutter doctor
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Recreate iOS project
+        run: |
           rm -rf ios
           flutter create .
-          
-          # تصويب podhelper بلا مشاكل الإزاحة
+
+      - name: Ensure podhelper.rb exists
+        run: |
           mkdir -p ios/Flutter
           printf "require 'fileutils'\ndef install_all_flutter_pods(path = nil); end\ndef flutter_root; ENV['FLUTTER_ROOT']; end" > ios/Flutter/podhelper.rb
 
-      - name: Build for Simulator
-        script: |
-          # هاد السطر هو اللي كيخليه يخدم في Appetize
-          flutter build ios --debug --simulator --no-codesign
+      - name: Build iOS for Simulator
+        run: flutter build ios --debug --simulator --no-codesign
 
       - name: Create IPA for Appetize
-        script: |
-          # مسح أي ملف قديم باش يبدا الـ Zip نقي
+        run: |
           rm -f app-debug.ipa
           rm -rf Payload
           mkdir -p Payload
-          # ركز في هاد المسار: هو اللي فيه النسخة ديال x86_64
           cp -r build/ios/iphonesimulator/Runner.app Payload
           zip -r app-debug.ipa Payload
 
-    artifacts:
-      - app-debug.ipa
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-simulator-ipa
+          path: app-debug.ipa
