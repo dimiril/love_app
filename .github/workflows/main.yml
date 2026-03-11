@@ -1,4 +1,4 @@
-name: Flutter iOS IPA
+name: Flutter iOS IPA for Appetize
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-ios:
+  build-ios-simulator:
     runs-on: macos-latest
 
     steps:
@@ -33,31 +33,21 @@ jobs:
       - name: Ensure podhelper.rb exists
         run: |
           mkdir -p ios/Flutter
-          if [ ! -f ios/Flutter/podhelper.rb ]; then
-            echo "# Minimal podhelper.rb to satisfy pod install" > ios/Flutter/podhelper.rb
-            echo "require 'fileutils'" >> ios/Flutter/podhelper.rb
-            echo "" >> ios/Flutter/podhelper.rb
-            echo "def install_all_flutter_pods(flutter_application_path = nil)" >> ios/Flutter/podhelper.rb
-            echo "  # placeholder" >> ios/Flutter/podhelper.rb
-            echo "end" >> ios/Flutter/podhelper.rb
-            echo "" >> ios/Flutter/podhelper.rb
-            echo "def flutter_root" >> ios/Flutter/podhelper.rb
-            echo "  ENV['FLUTTER_ROOT']" >> ios/Flutter/podhelper.rb
-            echo "end" >> ios/Flutter/podhelper.rb
-          fi
+          printf "require 'fileutils'\ndef install_all_flutter_pods(path = nil); end\ndef flutter_root; ENV['FLUTTER_ROOT']; end" > ios/Flutter/podhelper.rb
 
-      - name: Build iOS
-        run: flutter build ios --debug --no-codesign
+      - name: Build iOS for Simulator
+        run: flutter build ios --debug --simulator --no-codesign
 
-      - name: Create IPA
+      - name: Create IPA for Appetize
         run: |
-          mkdir Payload
-          cp -r build/ios/iphoneos/Runner.app Payload
-          zip -r app-debug.ipa Payload
+          rm -f app-debug.ipa
           rm -rf Payload
+          mkdir -p Payload
+          cp -r build/ios/iphonesimulator/Runner.app Payload
+          zip -r app-debug.ipa Payload
 
-      - name: Upload IPA
+      - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-debug-ipa
+          name: ios-simulator-ipa
           path: app-debug.ipa
