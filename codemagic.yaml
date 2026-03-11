@@ -29,24 +29,23 @@ workflows:
             cp ios_backup/Info.plist ios/Runner/Info.plist
           fi
 
-      - name: Ensure podhelper.rb exists
+- name: Ensure podhelper.rb exists
         script: |
           mkdir -p ios/Flutter
           if [ ! -f ios/Flutter/podhelper.rb ]; then
             cat <<'EOF' > ios/Flutter/podhelper.rb
-# Minimal podhelper.rb to satisfy pod install
-require 'fileutils'
+          # Minimal podhelper.rb to satisfy pod install
+          require 'fileutils'
 
-def install_all_flutter_pods(flutter_application_path = nil)
-  # placeholder
-end
+          def install_all_flutter_pods(flutter_application_path = nil)
+            # placeholder
+          end
 
-def flutter_root
-  ENV['FLUTTER_ROOT']
-end
-EOF
+          def flutter_root
+            ENV['FLUTTER_ROOT']
+          end
+          EOF
           fi
-
       - name: Build iOS (debug, no codesign)
         script: flutter build ios --debug --no-codesign
 
