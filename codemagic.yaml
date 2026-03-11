@@ -33,7 +33,7 @@ workflows:
         script: |
           mkdir -p ios/Flutter
           if [ ! -f ios/Flutter/podhelper.rb ]; then
-            cat > ios/Flutter/podhelper.rb << 'EOP'
+            cat <<'EOF' > ios/Flutter/podhelper.rb
 # Minimal podhelper.rb to satisfy pod install
 require 'fileutils'
 
@@ -44,7 +44,7 @@ end
 def flutter_root
   ENV['FLUTTER_ROOT']
 end
-EOP
+EOF
           fi
 
       - name: Build iOS (debug, no codesign)
