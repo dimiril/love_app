@@ -1,6 +1,4 @@
-workflows:
-  ios-debug-build:
-  name: Flutter iOS IPA (CodeMagic Style)
+name: Flutter iOS IPA (CodeMagic Style)
 
 on:
   push:
