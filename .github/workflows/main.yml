@@ -21,20 +21,26 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Recreate iOS project
+      - name: Recreate iOS project properly
         run: |
+          # 1. مسح شامل وبناء نظيف
           rm -rf ios
           flutter create . --platforms=ios
+          
+          # 2. توليد الـ Podfile الأصلي
           flutter pub get
-
-      - name: Inject No-Sign Configuration into Podfile
+          
+      - name: Secure Build and Fix Pods
         run: |
           cd ios
-          # هاد الأمر كيمسح أي post_install قديم وكيعوضو بواحد جديد فيه كاع الإعدادات
-          # بلا ما نمسحو الملف كامل باش نحافظو على روابط Flutter
-          sed -i '' '/post_install do |installer|/,$d' Podfile
+          # هاد السطر كيجبر الـ Xcode يلقى الـ Flutter Module
+          pod install
           
-          echo "post_install do |installer|
+          # دابا غانزيدو إعدادات الـ No-Sign بلا ما نمسحو الـ Hooks ديال Flutter
+          # هادي هي الطريقة المضمونة باش ما يطراش ليك No such module Flutter
+          cat <<EOF >> Podfile
+
+          post_install do |installer|
             installer.pods_project.targets.each do |target|
               target.build_configurations.each do |config|
                 config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
@@ -42,24 +48,25 @@ jobs:
                 config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
                 config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
                 config.build_settings['EXPANDED_CODE_SIGN_STYLE'] = 'Manual'
-                config.build_settings['COMPILER_INDEX_STORE_ENABLE'] = 'NO'
               end
             end
-          end" >> Podfile
+          end
+          EOF
           
+          # إعادة التثبيت لتطبيق التعديلات
           pod install
           cd ..
 
-      - name: Build iOS Simulator Debug
+      - name: Build iOS Simulator
         run: |
-          flutter build ios --simulator --debug --no-codesign
+          # استعملنا verbose باش يبان لينا المشكل بالتفصيل إذا طرا
+          flutter build ios --simulator --debug --no-codesign --verbose
 
       - name: Create IPA for Appetize
         run: |
-          rm -rf Payload
-          rm -f app-debug.ipa
+          rm -rf Payload app-debug.ipa
           mkdir -p Payload
-          # تأكد من هز الملف من المسار الصحيح
+          # كنهزو التطبيق من المسار اللي كيحطو فيه Xcode فـ Simulator
           cp -r build/ios/iphonesimulator/Runner.app Payload
           zip -r app-debug.ipa Payload
 
