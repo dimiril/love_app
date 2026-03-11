@@ -7,23 +7,17 @@ workflows:
       flutter: stable      # هادي غاتهنيك، غايجيب آخر نسخة مستقرة (3.24 أو 3.27...)
       xcode: latest        # باش يخدم مع Firebase و Swift الجديد
       cocoapods: default
-    scripts:
-      - name: Clean and Get Packages
-        script: | 
-          flutter clean
-          flutter pub get
-      - name: Prepare iOS Pods
-        script: |
-          cd ios
-          # مسح شامل لأي صداع من الويندوز
-          rm -rf Pods
-          rm -rf build
-          rm -f Podfile.lock
-          # تحديث الـ Repos وتثبيت الـ Pods
-          pod install --repo-update
-      - name: Build iOS Debug
-        script: |
-          # البناء باستعمال Xcode الجديد
-          flutter build ios --debug --no-codesign
-    artifacts:
-      - build/ios/iphoneos/*.app
+scripts:
+  - name: Install Flutter dependencies & Pods
+    script: |
+      flutter clean
+      flutter pub get
+      cd ios
+      pod deintegrate
+      pod install --repo-update
+      cd ..
+  - name: Build Debug IPA
+    script: |
+      flutter build ipa --debug --no-codesign
+artifacts:
+  - build/ios/ipa/*.ipa
