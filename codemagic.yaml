@@ -29,7 +29,7 @@ workflows:
             cp ios_backup/Info.plist ios/Runner/Info.plist
           fi
 
-- name: Ensure podhelper.rb exists
+      - name: Ensure podhelper.rb exists
         script: |
           mkdir -p ios/Flutter
           if [ ! -f ios/Flutter/podhelper.rb ]; then
