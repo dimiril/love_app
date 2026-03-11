@@ -20,16 +20,18 @@ workflows:
       - name: Ensure podhelper.rb exists
         script: |
           mkdir -p ios/Flutter
-          cat <<'EOF' > ios/Flutter/podhelper.rb
-require 'fileutils'
-def install_all_flutter_pods(flutter_application_path = nil)
-  # placeholder
-end
-def flutter_root
-  ENV['FLUTTER_ROOT']
-end
-EOF
-
+          # ركز هنا: الكود اللي لتحت خاصو يكون محاذي لـ mkdir
+          if [ ! -f ios/Flutter/podhelper.rb ]; then
+            cat <<'EOF' > ios/Flutter/podhelper.rb
+          require 'fileutils'
+          def install_all_flutter_pods(flutter_application_path = nil)
+            # placeholder
+          end
+          def flutter_root
+            ENV['FLUTTER_ROOT']
+          end
+          EOF
+          fi
       - name: Build for Simulator
         script: |
           # هاد السطر هو الأهم: كيبني النسخة اللي كيقبلها Appetize
