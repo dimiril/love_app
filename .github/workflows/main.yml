@@ -27,29 +27,14 @@ jobs:
           flutter create . --platforms=ios
           flutter pub get
 
-      - name: Clean and Rewrite Podfile
+      - name: Inject No-Sign Configuration into Podfile
         run: |
           cd ios
-          # غادي نمسحو الملف القديم ونكتبو واحد جديد نقي
-          rm Podfile
-          cat <<EOF > Podfile
-          platform :ios, '13.0'
-
-          # هادي هي الدالة اللي كتحكم فـ الـ Plugins
-          def flutter_install_all_ios_pods(main_target_path)
-            return unless File.exist?(main_target_path)
-            pod 'Flutter', :path => 'Flutter'
-          end
-
-          target 'Runner' do
-            use_frameworks!
-            use_modular_headers!
-
-            flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-          end
-
-          # هنا درنا post_install واحدة جامعة كولشي
-          post_install do |installer|
+          # هاد الأمر كيمسح أي post_install قديم وكيعوضو بواحد جديد فيه كاع الإعدادات
+          # بلا ما نمسحو الملف كامل باش نحافظو على روابط Flutter
+          sed -i '' '/post_install do |installer|/,$d' Podfile
+          
+          echo "post_install do |installer|
             installer.pods_project.targets.each do |target|
               target.build_configurations.each do |config|
                 config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
@@ -57,12 +42,11 @@ jobs:
                 config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
                 config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
                 config.build_settings['EXPANDED_CODE_SIGN_STYLE'] = 'Manual'
+                config.build_settings['COMPILER_INDEX_STORE_ENABLE'] = 'NO'
               end
             end
-          end
-          EOF
+          end" >> Podfile
           
-          # دابا غادي نديرو تثبيت حقيقي للـ Plugins
           pod install
           cd ..
 
@@ -75,6 +59,7 @@ jobs:
           rm -rf Payload
           rm -f app-debug.ipa
           mkdir -p Payload
+          # تأكد من هز الملف من المسار الصحيح
           cp -r build/ios/iphonesimulator/Runner.app Payload
           zip -r app-debug.ipa Payload
 
