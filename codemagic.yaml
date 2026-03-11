@@ -20,8 +20,3 @@ workflows:
           flutter build ipa --debug --no-codesign
     artifacts:
       - build/ios/ipa/*.ipa
-    publishing:
-      email:
-        recipients:
-          - dimiril1@gmail.com
-        on_build_success: true
