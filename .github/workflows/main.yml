@@ -21,25 +21,23 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Recreate iOS project properly
+      - name: Recreate iOS project
         run: |
-          # 1. مسح شامل وبناء نظيف
           rm -rf ios
           flutter create . --platforms=ios
-          
-          # 2. توليد الـ Podfile الأصلي
           flutter pub get
-          
-      - name: Secure Build and Fix Pods
+
+      - name: Advanced Podfile Patch
         run: |
           cd ios
-          # هاد السطر كيجبر الـ Xcode يلقى الـ Flutter Module
-          pod install
-          
-          # دابا غانزيدو إعدادات الـ No-Sign بلا ما نمسحو الـ Hooks ديال Flutter
-          # هادي هي الطريقة المضمونة باش ما يطراش ليك No such module Flutter
-          cat <<EOF >> Podfile
-
+          # هاد السكريبت بـ Ruby غادي يقاد الـ Podfile بلا ما يدير Error ديال Multiple post_install
+          ruby -e "
+            path = 'Podfile'
+            content = File.read(path)
+            # كنحيدو أي post_install قديم كاين فـ الملف
+            content = content.gsub(/post_install do \|installer\|.*?end/m, '')
+            # كنضيفو الـ post_install ديالنا فـ لخر ديال الملف
+            content += %Q{
           post_install do |installer|
             installer.pods_project.targets.each do |target|
               target.build_configurations.each do |config|
@@ -48,25 +46,26 @@ jobs:
                 config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
                 config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
                 config.build_settings['EXPANDED_CODE_SIGN_STYLE'] = 'Manual'
+                config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
               end
             end
           end
-          EOF
-          
-          # إعادة التثبيت لتطبيق التعديلات
+          }
+            File.open(path, 'w') { |f| f.write(content) }
+          "
+          # دابا غادي نديرو pod install نقي
           pod install
           cd ..
 
       - name: Build iOS Simulator
         run: |
-          # استعملنا verbose باش يبان لينا المشكل بالتفصيل إذا طرا
-          flutter build ios --simulator --debug --no-codesign --verbose
+          # بناء التطبيق للمحاكي
+          flutter build ios --simulator --debug --no-codesign
 
       - name: Create IPA for Appetize
         run: |
           rm -rf Payload app-debug.ipa
           mkdir -p Payload
-          # كنهزو التطبيق من المسار اللي كيحطو فيه Xcode فـ Simulator
           cp -r build/ios/iphonesimulator/Runner.app Payload
           zip -r app-debug.ipa Payload
 
