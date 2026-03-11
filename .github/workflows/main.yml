@@ -1,4 +1,4 @@
-name: Flutter iOS IPA for Appetize
+name: Flutter iOS Simulator IPA
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Flutter
@@ -25,20 +25,21 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Recreate iOS project
+      - name: Clean & Recreate iOS Project
         run: |
+          flutter clean
           rm -rf ios
           flutter create .
-
-      - name: Ensure podhelper.rb exists
+          
+      - name: Ensure minimal podhelper.rb exists
         run: |
           mkdir -p ios/Flutter
-          printf "require 'fileutils'\ndef install_all_flutter_pods(path = nil); end\ndef flutter_root; ENV['FLUTTER_ROOT']; end" > ios/Flutter/podhelper.rb
+          printf "require 'fileutils'\ndef install_all_flutter_pods(flutter_application_path = nil); end\ndef flutter_root; ENV['FLUTTER_ROOT']; end" > ios/Flutter/podhelper.rb
 
-      - name: Build iOS for Simulator
+      - name: Build iOS Simulator
         run: flutter build ios --debug --simulator --no-codesign
 
-      - name: Create IPA for Appetize
+      - name: Create IPA for Appetize.io
         run: |
           rm -f app-debug.ipa
           rm -rf Payload
@@ -51,3 +52,4 @@ jobs:
         with:
           name: ios-simulator-ipa
           path: app-debug.ipa
+          if-no-files-found: warn
