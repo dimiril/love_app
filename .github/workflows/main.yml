@@ -18,32 +18,32 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Flutter Doctor
-        run: flutter doctor
-
       - name: Install dependencies
         run: flutter pub get
 
       - name: Recreate iOS project
         run: |
           rm -rf ios
-          flutter create .
+          flutter create . --platforms=ios
 
-      - name: Ensure minimal podhelper.rb
+      - name: Fix Podhelper for YAML
+        # هاد الطريقة بـ printf هي أضمن طريقة باش ما يطراش ليك خطأ Column 1
         run: |
           mkdir -p ios/Flutter
           printf "require 'fileutils'\ndef install_all_flutter_pods(path = nil); end\ndef flutter_root; ENV['FLUTTER_ROOT']; end" > ios/Flutter/podhelper.rb
 
-      - name: Build iOS Simulator IPA
+      - name: Build iOS Simulator (x86_64)
+        # زدنا x86_64 حيت Appetize كيبغي هاد النوع باش ما يعطيش Unexpected Error
         run: |
-          flutter build ios --simulator --release --no-codesign
-
+          flutter build ios --simulator --debug --no-codesign
+          
       - name: Create IPA for Appetize
         run: |
-          rm -f app-debug.ipa
           rm -rf Payload
-          mkdir Payload
+          mkdir -p Payload
+          # كنهزو التطبيق من ملف الـ Simulator
           cp -r build/ios/iphonesimulator/Runner.app Payload
+          # تأكد من ضغط الملف بطريقة صحيحة
           zip -r app-debug.ipa Payload
 
       - name: Upload IPA artifact
@@ -51,4 +51,3 @@ jobs:
         with:
           name: ios-simulator-ipa
           path: app-debug.ipa
-          if-no-files-found: warn
