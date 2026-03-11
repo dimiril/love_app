@@ -18,54 +18,63 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Recreate iOS & Fix Bundle ID
+      - name: Clean and Recreate
         run: |
           flutter clean
-          rm -rf ios
+          rm -rf ios/Pods
+          rm -rf ios/Podfile.lock
           flutter create . --platforms=ios --org love.messages.romantic.whispers.heartfelt
-          # توحيد الـ Bundle ID مع Firebase
-          find ios -name "project.pbxproj" -exec sed -i '' 's/love.messages.romantic.whispers.heartfelt.heartfelt/love.messages.romantic.whispers.heartfelt.quotes/g' {} +
+          flutter pub get
 
-      - name: Install Pods & Fix Signing
+      - name: Match Bundle ID & Patch Project
+        run: |
+          # تغيير الـ Bundle ID فـ كاع الملفات لـ quotes باش يتوافق مع Firebase
+          find ios -name "project.pbxproj" -exec sed -i '' 's/love.messages.romantic.whispers.heartfelt.heartfelt/love.messages.romantic.whispers.heartfelt.quotes/g' {} +
+          # تحديد نسخة الـ iOS الدنيا
+          find ios -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = .*/IPHONEOS_DEPLOYMENT_TARGET = 13.0;/g' {} +
+
+      - name: Pods Setup & Signing Fix
         run: |
           cd ios
           pod install
-          # تعطيل الـ Signing فـ الـ Pods والـ Runner
+          # تعطيل التوقيع لضمان اشتغال التطبيق فـ المحاكي بلا حساب مطور
           echo "post_install do |installer|
             installer.pods_project.targets.each do |target|
               target.build_configurations.each do |config|
                 config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
                 config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
-                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+                config.build_settings['EXPANDED_CODE_SIGN_STYLE'] = 'Manual'
+                config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
               end
             end
           end" >> Podfile
           pod update
           cd ..
 
-      - name: Build for Simulator (All Architectures)
+      - name: Build Debug Simulator
         run: |
-          # بناء التطبيق للمحاكي مع تفعيل الـ Plugins
-          flutter build ios --simulator --debug --no-codesign --verbose
+          # بناء التطبيق مع تفعيل كاع الـ Plugins
+          flutter build ios --simulator --debug --no-codesign
 
-      - name: Force Framework Embedding
+      - name: Patch App Bundle for Appetize
+        # هاد الخطوة هي اللي كتحيد الشاشة الكحلة: كتأكد أن الـ Plugins مجمعين لداخل
         run: |
-          # هاد الخطوة كتحل مشكل الشاشة الكحلة (كتأكد أن الـ Plugins مجمعين)
-          cd build/ios/iphonesimulator/Runner.app
-          mkdir -p Frameworks
-          # كنهزو كاع الـ .framework اللي تصايبو فـ الـ Build وكنحطوهم لداخل
-          find ../ -name "*.framework" -exec cp -R {} Frameworks/ \; 2>/dev/null || true
-          cd ../../../..
+          APP_PATH="build/ios/iphonesimulator/Runner.app"
+          if [ -d "$APP_PATH" ]; then
+            cd "$APP_PATH"
+            mkdir -p Frameworks
+            find ../ -name "*.framework" -exec cp -R {} Frameworks/ \; 2>/dev/null || true
+            cd ../../../..
+          fi
 
-      - name: Create IPA for Appetize
+      - name: Create IPA
         run: |
           rm -rf Payload app-debug.ipa
           mkdir -p Payload
           cp -R build/ios/iphonesimulator/Runner.app Payload
-          # ضغط الملف بـ طريقة هادئة ومنظمة
           zip -r app-debug.ipa Payload
 
-      - name: Upload IPA artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ios-simulator-ipa
