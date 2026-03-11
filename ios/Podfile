@@ -1,19 +1,24 @@
 platform :ios, '13.0'
 
+# ضروري باش Firebase تتشاف فـ Xcode
+use_frameworks!
+use_modular_headers!
+
 load File.join(File.dirname(File.realpath(__FILE__)), 'Flutter', 'podhelper.rb')
 
 target 'Runner' do
-  use_frameworks!
-  use_modular_headers!
-
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+    
     target.build_configurations.each do |config|
+      # توحيد النسخة باش ما يوقعش Error
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      # حل مشكل Firebase Core فـ بعض النسخ
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', 'PERMISSION_NOTIFICATIONS=1']
     end
   end
 end
