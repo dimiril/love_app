@@ -1,4 +1,4 @@
-name: Flutter iOS IPA (Simulator/Debug)
+name: Flutter iOS IPA (Preserve Info.plist)
 
 on:
   push:
@@ -25,21 +25,35 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Ensure iOS platform exists
+      # 🛡️ Backup original Info.plist
+      - name: Backup Info.plist
+        run: |
+          mkdir -p ios_backup
+          cp ios/Runner/Info.plist ios_backup/Info.plist || echo "No Info.plist found"
+
+      # ❌ Do NOT delete ios/, just recreate missing files
+      - name: Ensure iOS platform exists (create missing files)
         run: flutter create --platforms=ios .
 
-      - name: Build iOS for simulator
-        run: flutter build ios --simulator
+      # 🛡️ Restore original Info.plist
+      - name: Restore Info.plist
+        run: cp ios_backup/Info.plist ios/Runner/Info.plist
 
-      - name: Create IPA (from simulator build)
+      # 🔹 Build iOS Debug without codesign
+      - name: Build iOS (Debug, No Codesign)
+        run: flutter build ios --debug --no-codesign
+
+      # 🔹 Create IPA
+      - name: Create IPA
         run: |
           mkdir -p Payload
-          cp -r build/ios/iphonesimulator/Runner.app Payload/
-          zip -r app-sim-debug.ipa Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r app-debug.ipa Payload
           rm -rf Payload
 
+      # 🔹 Upload IPA
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ios-sim-debug-ipa
-          path: app-sim-debug.ipa
+          name: ios-debug-ipa
+          path: app-debug.ipa
