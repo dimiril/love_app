@@ -1,6 +1,6 @@
 workflows:
   flutter_ios_debug:
-    name: Flutter iOS Simulator Build
+    name: Flutter iOS Simulator Fix
     max_build_duration: 60
     environment:
       flutter: stable
@@ -9,38 +9,30 @@ workflows:
       - name: Checkout code
         script: git checkout $CM_BRANCH
 
-      - name: Install dependencies
-        script: flutter pub get
-
-      - name: Recreate iOS project
+      - name: Clean and Setup
         script: |
+          # مسح كاع الملفات القديمة باش ما يبقاش التداخل
+          flutter clean
+          flutter pub get
           rm -rf ios
           flutter create .
-
-      - name: Ensure podhelper.rb exists
-        script: |
+          
+          # تصويب podhelper بلا مشاكل الإزاحة
           mkdir -p ios/Flutter
-          # ركز هنا: الكود اللي لتحت خاصو يكون محاذي لـ mkdir
-          if [ ! -f ios/Flutter/podhelper.rb ]; then
-            cat <<'EOF' > ios/Flutter/podhelper.rb
-          require 'fileutils'
-          def install_all_flutter_pods(flutter_application_path = nil)
-            # placeholder
-          end
-          def flutter_root
-            ENV['FLUTTER_ROOT']
-          end
-          EOF
-          fi
+          printf "require 'fileutils'\ndef install_all_flutter_pods(path = nil); end\ndef flutter_root; ENV['FLUTTER_ROOT']; end" > ios/Flutter/podhelper.rb
+
       - name: Build for Simulator
         script: |
-          # هاد السطر هو الأهم: كيبني النسخة اللي كيقبلها Appetize
+          # هاد السطر هو اللي كيخليه يخدم في Appetize
           flutter build ios --debug --simulator --no-codesign
 
-      - name: Package for Appetize
+      - name: Create IPA for Appetize
         script: |
+          # مسح أي ملف قديم باش يبدا الـ Zip نقي
+          rm -f app-debug.ipa
+          rm -rf Payload
           mkdir -p Payload
-          # ركز هنا: المسار تبدل لـ iphonesimulator
+          # ركز في هاد المسار: هو اللي فيه النسخة ديال x86_64
           cp -r build/ios/iphonesimulator/Runner.app Payload
           zip -r app-debug.ipa Payload
 
