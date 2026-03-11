@@ -1,23 +1,34 @@
 platform :ios, '13.0'
 
-# هاد السطر ضروري باش Xcode يلقى المكتبات
-use_frameworks!
-use_modular_headers!
+# 1. تعريف مسار الملف المنحوس
+podhelper_path = File.join(File.dirname(File.realpath(__FILE__)), 'Flutter', 'podhelper.rb')
 
-load File.join(File.dirname(File.realpath(__FILE__)), 'Flutter', 'podhelper.rb')
+# 2. محاولة تحميل الملف بذكاء
+if File.exist?(podhelper_path)
+  load podhelper_path
+else
+  # إذا مالقاهش، غايطبع تحذير وغايخلي Flutter هو اللي يتكلف فالمرحلة الجاية
+  puts "Warning: podhelper.rb not found at #{podhelper_path}. Skipping for now."
+end
 
 target 'Runner' do
-  # هاد السطر هو اللي كيخلي Firebase والPlugins الآخرين يتزادو لـ Xcode
-  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  use_frameworks!
+  use_modular_headers!
+
+  # تأكد بلي الدالة كاينة عاد نفذها
+  if defined?(flutter_install_all_ios_pods)
+    flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  end
 end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
-    flutter_additional_ios_build_settings(target)
+    # نفس الشيء هنا، تأكد بلي الدالة موجودة
+    flutter_additional_ios_build_settings(target) if defined?(flutter_additional_ios_build_settings)
+    
     target.build_configurations.each do |config|
-      # ضروري لـ Firebase باش ما يوقعش تضارب فـ النسخ
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
-      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', 'PERMISSION_NOTIFICATIONS=1']
+	  config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', 'PERMISSION_NOTIFICATIONS=1']
     end
   end
 end
