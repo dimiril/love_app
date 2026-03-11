@@ -1,34 +1,37 @@
-**/dgph
+# ملفات Xcode
+**/DerivedData/
+*.pbxuser
 *.mode1v3
 *.mode2v3
-*.moved-aside
-*.pbxuser
 *.perspectivev3
-**/*sync/
-.sconsign.dblite
-.tags*
-**/.vagrant/
-**/DerivedData/
-Icon?
+xcuserdata/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+
+# ملفات CocoaPods
+# كنخليو الـ Podfile والـ Podfile.lock ولكن كنمنعو مجلد الـ Pods كامل
 **/Pods/
 **/.symlinks/
-profile
-xcuserdata
-**/.generated/
+
+# ملفات Flutter (مهمة!)
+# حيدنا المنع على Generated.xcconfig و flutter_export_environment.sh
 Flutter/App.framework
 Flutter/Flutter.framework
 Flutter/Flutter.podspec
-Flutter/Generated.xcconfig
 Flutter/ephemeral/
 Flutter/app.flx
 Flutter/app.zip
 Flutter/flutter_assets/
-Flutter/flutter_export_environment.sh
 ServiceDefinitions.json
+
+# الـ Registrant كيتولد تلقائياً فـ الماك
 Runner/GeneratedPluginRegistrant.*
 
-# Exceptions to above rules.
-!default.mode1v3
-!default.mode2v3
-!default.pbxuser
-!default.perspectivev3
+# ملفات أخرى
+**/.generated/
+**/.vagrant/
+.DS_Store
+.tags*
+.sconsign.dblite
+Icon?
