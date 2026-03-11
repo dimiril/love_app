@@ -1,34 +1,19 @@
 platform :ios, '13.0'
 
-# 1. تعريف مسار الملف المنحوس
-podhelper_path = File.join(File.dirname(File.realpath(__FILE__)), 'Flutter', 'podhelper.rb')
-
-# 2. محاولة تحميل الملف بذكاء
-if File.exist?(podhelper_path)
-  load podhelper_path
-else
-  # إذا مالقاهش، غايطبع تحذير وغايخلي Flutter هو اللي يتكلف فالمرحلة الجاية
-  puts "Warning: podhelper.rb not found at #{podhelper_path}. Skipping for now."
-end
+load File.join(File.dirname(File.realpath(__FILE__)), 'Flutter', 'podhelper.rb')
 
 target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
-  # تأكد بلي الدالة كاينة عاد نفذها
-  if defined?(flutter_install_all_ios_pods)
-    flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-  end
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
-    # نفس الشيء هنا، تأكد بلي الدالة موجودة
-    flutter_additional_ios_build_settings(target) if defined?(flutter_additional_ios_build_settings)
-    
+    flutter_additional_ios_build_settings(target)
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
-	  config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', 'PERMISSION_NOTIFICATIONS=1']
     end
   end
 end
