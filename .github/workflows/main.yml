@@ -1,4 +1,4 @@
-name: Flutter iOS IPA
+name: Flutter Build Android & iOS
 
 on:
   push:
@@ -6,11 +6,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-ios:
+  build:
     runs-on: macos-latest
 
+    strategy:
+      matrix:
+        platform: [android, ios]
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Flutter
@@ -25,22 +29,20 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Recreate iOS project
-        run: |
-          rm -rf ios
-          flutter create .
+      - name: Ensure platforms exist
+        run: flutter create --platforms=android,ios .
 
-      - name: Build iOS
-        run: flutter build ios --debug --no-codesign
-
-      - name: Create IPA
+      - name: Build iOS IPA
+        if: matrix.platform == 'ios'
         run: |
+          flutter build ios --debug --no-codesign
           mkdir Payload
           cp -r build/ios/iphoneos/Runner.app Payload
           zip -r app-debug.ipa Payload
           rm -rf Payload
 
-      - name: Upload IPA
+      - name: Upload iOS IPA
+        if: matrix.platform == 'ios'
         uses: actions/upload-artifact@v4
         with:
           name: ios-debug-ipa
