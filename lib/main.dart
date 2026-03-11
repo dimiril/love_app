@@ -32,12 +32,15 @@ import 'routes/app_router.dart';
 import 'utils/snack_bar.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  await SharedPref.init();
-  CacheUtils.autoSmartClean(limitMB: 50);
-  await FcmService().initialize();
-
+WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp().timeout(const Duration(seconds: 8));
+    await SharedPref.init();
+    CacheUtils.autoSmartClean(limitMB: 50);
+    await FcmService().initialize().timeout(const Duration(seconds: 5));
+  } catch (e) {
+    debugPrint("Firebase/FCM Error: $e");
+  }
   final dioService = DioService();
   dioService.setForcedUpdateCallback(() {
     final context = navigatorKey.currentContext;
