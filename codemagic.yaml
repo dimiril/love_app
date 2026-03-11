@@ -2,10 +2,10 @@ workflows:
   ios-debug-build:
     name: iOS Debug Build
     max_build_duration: 60
-    instance_type: mac_mini_m2 # استعملنا M2 حيت هي اللي فيها Xcode الجديد
+    instance_type: mac_mini_m2
     environment:
-      flutter: 3.23.1
-      xcode: latest         # هادي غاتهنيك من مشكل Version unsupported
+      flutter: stable      # هادي غاتهنيك، غايجيب آخر نسخة مستقرة (3.24 أو 3.27...)
+      xcode: latest        # باش يخدم مع Firebase و Swift الجديد
       cocoapods: default
     scripts:
       - name: Clean and Get Packages
@@ -15,11 +15,11 @@ workflows:
       - name: Prepare iOS Pods
         script: |
           cd ios
-          # مسح شامل لأي ملفات قديمة جاية من الويندوز
+          # مسح شامل لأي صداع من الويندوز
           rm -rf Pods
           rm -rf build
           rm -f Podfile.lock
-          # تثبيت الـ Pods من جديد وسط الماك
+          # تحديث الـ Repos وتثبيت الـ Pods
           pod install --repo-update
       - name: Build iOS Debug
         script: |
