@@ -18,58 +18,51 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Recreate iOS project
+      - name: Recreate iOS & Fix Bundle ID
         run: |
+          flutter clean
           rm -rf ios
-          flutter create . --platforms=ios
-          flutter pub get
+          flutter create . --platforms=ios --org love.messages.romantic.whispers.heartfelt
+          # توحيد الـ Bundle ID مع Firebase
+          find ios -name "project.pbxproj" -exec sed -i '' 's/love.messages.romantic.whispers.heartfelt.heartfelt/love.messages.romantic.whispers.heartfelt.quotes/g' {} +
 
-      - name: Fix Bundle ID for Firebase
-        # هاد الخطوة ضرورية حيت الـ Plist ديالك فيه id كيسالي بـ .quotes 
-        # والـ App كيبني بـ .heartfelt. هاد التناقض كيدير شاشة بيضاء.
-        run: |
-          cd ios/Runner.xcodeproj
-          sed -i '' 's/love.messages.romantic.whispers.heartfelt.heartfelt/love.messages.romantic.whispers.heartfelt.quotes/g' project.pbxproj
-          cd ../..
-
-      - name: Safe Podfile Injection
+      - name: Install Pods & Fix Signing
         run: |
           cd ios
-          # تثبيت الـ Pods الأولي
           pod install
-          
-          # تعديل الإعدادات لتعطيل الـ Signing وتحديد النسخة
-          sed -i '' '/target.build_configurations.each do |config|/a \
-                config.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "13.0" \
-                config.build_settings["ENABLE_BITCODE"] = "NO" \
-                config.build_settings["CODE_SIGNING_ALLOWED"] = "NO" \
-                config.build_settings["CODE_SIGNING_REQUIRED"] = "NO" \
-                config.build_settings["ONLY_ACTIVE_ARCH"] = "YES" ' Podfile
-          
-          # تحديث الـ Pods لتطبيق التعديلات
+          # تعطيل الـ Signing فـ الـ Pods والـ Runner
+          echo "post_install do |installer|
+            installer.pods_project.targets.each do |target|
+              target.build_configurations.each do |config|
+                config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+                config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
+                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+              end
+            end
+          end" >> Podfile
           pod update
           cd ..
 
-      - name: Build iOS Simulator
+      - name: Build for Simulator (All Architectures)
         run: |
-          # تنظيف وبناء نسخة المحاكي
-          flutter clean
-          flutter pub get
-          flutter build ios --simulator --debug --no-codesign
+          # بناء التطبيق للمحاكي مع تفعيل الـ Plugins
+          flutter build ios --simulator --debug --no-codesign --verbose
+
+      - name: Force Framework Embedding
+        run: |
+          # هاد الخطوة كتحل مشكل الشاشة الكحلة (كتأكد أن الـ Plugins مجمعين)
+          cd build/ios/iphonesimulator/Runner.app
+          mkdir -p Frameworks
+          # كنهزو كاع الـ .framework اللي تصايبو فـ الـ Build وكنحطوهم لداخل
+          find ../ -name "*.framework" -exec cp -R {} Frameworks/ \; 2>/dev/null || true
+          cd ../../../..
 
       - name: Create IPA for Appetize
         run: |
           rm -rf Payload app-debug.ipa
           mkdir -p Payload
-          # التأكد من هز التطبيق من المسار الصحيح للـ Simulator
-          if [ -d "build/ios/iphonesimulator/Runner.app" ]; then
-            cp -r build/ios/iphonesimulator/Runner.app Payload
-          else
-            cp -r build/ios/Debug-iphonesimulator/Runner.app Payload
-          fi
+          cp -R build/ios/iphonesimulator/Runner.app Payload
+          # ضغط الملف بـ طريقة هادئة ومنظمة
           zip -r app-debug.ipa Payload
 
       - name: Upload IPA artifact
