@@ -1,24 +1,29 @@
 workflows:
-  debug_ios_build:
-    name: Debug iOS Build
+  ios-debug-build:
+    name: iOS Debug Build
     max_build_duration: 60
+    instance_type: mac_mini_m2 # استعملنا M2 حيت هي اللي فيها Xcode الجديد
     environment:
-      flutter: "3.23.1"
-      xcode: "15.4"        # هادي هي النسخة المستقرة دابا فـ 2026
+      flutter: 3.23.1
+      xcode: latest         # هادي غاتهنيك من مشكل Version unsupported
       cocoapods: default
     scripts:
-      - name: Install Flutter dependencies & Pods
-        script: |
+      - name: Clean and Get Packages
+        script: | 
           flutter clean
           flutter pub get
-          cd ios
-          # مسح أي بقايا قديمة باش ما يوقعش Conflict
-          rm -rf Pods
-          rm -f Podfile.lock
-          pod install --repo-update
-          cd ..
-      - name: Build Debug IPA
+      - name: Prepare iOS Pods
         script: |
+          cd ios
+          # مسح شامل لأي ملفات قديمة جاية من الويندوز
+          rm -rf Pods
+          rm -rf build
+          rm -f Podfile.lock
+          # تثبيت الـ Pods من جديد وسط الماك
+          pod install --repo-update
+      - name: Build iOS Debug
+        script: |
+          # البناء باستعمال Xcode الجديد
           flutter build ios --debug --no-codesign
     artifacts:
       - build/ios/iphoneos/*.app
