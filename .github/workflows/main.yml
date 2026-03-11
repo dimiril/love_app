@@ -1,4 +1,4 @@
-name: Flutter iOS Debug IPA
+name: Flutter iOS IPA
 
 on:
   push:
@@ -10,20 +10,24 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          cache: true
+
+      - name: Flutter Doctor
+        run: flutter doctor
 
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Fix iOS project
+      - name: Recreate iOS project
         run: |
-          flutter clean
-          flutter pub get
+          rm -rf ios
           flutter create .
 
       - name: Build iOS
@@ -34,6 +38,7 @@ jobs:
           mkdir Payload
           cp -r build/ios/iphoneos/Runner.app Payload
           zip -r app-debug.ipa Payload
+          rm -rf Payload
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
