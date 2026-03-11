@@ -4,20 +4,29 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
-      flutter: stable      # هادي غاتهنيك، غايجيب آخر نسخة مستقرة (3.24 أو 3.27...)
-      xcode: latest        # باش يخدم مع Firebase و Swift الجديد
+      flutter: stable
+      xcode: latest
       cocoapods: default
-scripts:
-  - name: Install Flutter dependencies & Pods
-    script: |
-      flutter clean
-      flutter pub get
-      cd ios
-      pod deintegrate
-      pod install --repo-update
-      cd ..
-  - name: Build Debug IPA
-    script: |
-      flutter build ipa --debug --no-codesign
-artifacts:
-  - build/ios/ipa/*.ipa
+    scripts:
+      - name: Clean and Get Packages
+        script: | 
+          flutter clean
+          flutter pub get
+      - name: Prepare iOS Config & Pods
+        script: |
+          # 1. توليد ملفات الإعدادات (Generated.xcconfig & podhelper.rb)
+          flutter build ios --config-only
+          
+          # 2. تنظيف وتثبيت الـ Pods
+          cd ios
+          rm -rf Pods
+          rm -rf build
+          rm -f Podfile.lock
+          pod install --repo-update
+          cd ..
+      - name: Build iOS Debug
+        script: |
+          # 3. البناء النهائي
+          flutter build ios --debug --no-codesign
+    artifacts:
+      - build/ios/iphoneos/*.app
