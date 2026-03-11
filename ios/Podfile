@@ -1,26 +1,23 @@
 platform :ios, '13.0'
 
-# هاد السطر كيقول ليه: "حاول تقرا الملف، وإلا مالقيتيهش ما ديرش Error"
-podhelper_path = File.join(File.dirname(File.realpath(__FILE__)), 'Flutter', 'podhelper.rb')
-if File.exist?(podhelper_path)
-  load podhelper_path
-end
+# هاد السطر ضروري باش Xcode يلقى المكتبات
+use_frameworks!
+use_modular_headers!
+
+load File.join(File.dirname(File.realpath(__FILE__)), 'Flutter', 'podhelper.rb')
 
 target 'Runner' do
-  use_frameworks!
-  use_modular_headers!
-
-  # تأكد أن هاد الدالة كاينة عاد خدم بها
-  if defined?(flutter_install_all_ios_pods)
-    flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-  end
+  # هاد السطر هو اللي كيخلي Firebase والPlugins الآخرين يتزادو لـ Xcode
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
-    flutter_additional_ios_build_settings(target) if defined?(flutter_additional_ios_build_settings)
+    flutter_additional_ios_build_settings(target)
     target.build_configurations.each do |config|
+      # ضروري لـ Firebase باش ما يوقعش تضارب فـ النسخ
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', 'PERMISSION_NOTIFICATIONS=1']
     end
   end
 end
